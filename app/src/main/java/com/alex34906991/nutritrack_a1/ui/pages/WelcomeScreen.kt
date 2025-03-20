@@ -33,7 +33,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Student name + ID
-        Text(text = "Alex Scott (14578373)")
+        Text(text = "Alex Lai (34906991)")
         // Replace with your own student name and ID
 
         Spacer(modifier = Modifier.height(32.dp))
