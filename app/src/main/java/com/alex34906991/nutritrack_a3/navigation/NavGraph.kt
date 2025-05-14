@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,7 +25,7 @@ import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 fun AppNavHost(viewModel: NutriTrackViewModel) {
     val navController = rememberNavController()
     // Define routes that should show the bottom navigation bar
-    val bottomNavItems = listOf("home", "insights", "settings")
+    val bottomNavItems = listOf("home", "insights", "nutricoach", "settings")
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     
@@ -93,8 +94,13 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
                 InsightsScreen(
                     viewModel = viewModel,
                     onImproveDietClick = {
-                        // Future: navigate to NutriCoach
+                        navController.navigate("nutricoach")
                     }
+                )
+            }
+            composable("nutricoach") {
+                NutriCoachScreen(
+                    viewModel = viewModel
                 )
             }
             composable("settings") {
@@ -128,8 +134,14 @@ fun BottomNavigationBar(
         NavigationBarItem(
             selected = selectedRoute == "insights",
             onClick = { onItemClick("insights") },
-            icon = { Icon(Icons.Rounded.Add, contentDescription = "Insight") },
+            icon = { Icon(imageVector = Icons.Rounded.Insights, contentDescription = "Insights") },
             label = { Text("Insights") }
+        )
+        NavigationBarItem(
+            selected = selectedRoute == "nutricoach",
+            onClick = { onItemClick("nutricoach") },
+            icon = { Icon(Icons.Rounded.Add, contentDescription = "NutriCoach") },
+            label = { Text("NutriCoach") }
         )
         NavigationBarItem(
             selected = selectedRoute == "settings",

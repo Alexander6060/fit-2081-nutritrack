@@ -6,13 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PatientEntity::class, FoodIntakeEntity::class],
+    entities = [PatientEntity::class, FoodIntakeEntity::class, NutriCoachTipEntity::class],
     version = 1,
     exportSchema = false
 )
 abstract class NutriTrackDatabase : RoomDatabase() {
     abstract fun patientDao(): PatientDao
     abstract fun foodIntakeDao(): FoodIntakeDao
+    abstract fun nutriCoachTipDao(): NutriCoachTipDao
 
     companion object {
         @Volatile

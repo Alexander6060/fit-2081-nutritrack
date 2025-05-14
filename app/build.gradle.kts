@@ -72,4 +72,10 @@ dependencies {
     
     // Preferences
     implementation(libs.androidx.preference)
+    
+    // Material Icons Extended (for additional icons like Insights)
+    implementation("androidx.compose.material:material-icons-extended:1.6.1")
+    
+    // Google Gemini AI SDK
+    implementation(libs.generativeai)
 }

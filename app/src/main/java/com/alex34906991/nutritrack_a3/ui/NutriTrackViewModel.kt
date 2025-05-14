@@ -5,7 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alex34906991.nutritrack_a3.data.UserData
 import com.alex34906991.nutritrack_a3.data.database.FoodIntakeEntity
+import com.alex34906991.nutritrack_a3.data.database.NutriCoachTipEntity
 import com.alex34906991.nutritrack_a3.data.repository.FoodIntakeRepository
+import com.alex34906991.nutritrack_a3.data.repository.NutriCoachRepository
 import com.alex34906991.nutritrack_a3.data.repository.PatientRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,7 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
 
     private val patientRepository = PatientRepository(application.applicationContext)
     private val foodIntakeRepository = FoodIntakeRepository(application.applicationContext)
+    private val nutriCoachRepository = NutriCoachRepository(application.applicationContext)
 
     private val _users = mutableListOf<UserData>()
     val users: List<UserData> get() = _users
@@ -40,6 +43,16 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
     private var biggestMealTime: String? = null
     private var sleepTime: String? = null
     private var wakeTime: String? = null
+    
+    // NutriCoach related state
+    private val _nutriCoachTips = MutableStateFlow<List<NutriCoachTipEntity>>(emptyList())
+    val nutriCoachTips: StateFlow<List<NutriCoachTipEntity>> = _nutriCoachTips
+    
+    private val _latestTip = MutableStateFlow<String?>(null)
+    val latestTip: StateFlow<String?> = _latestTip
+    
+    private val _isFruitScoreOptimal = MutableStateFlow(false)
+    val isFruitScoreOptimal: StateFlow<Boolean> = _isFruitScoreOptimal
 
     init {
         // Load initial data if needed
@@ -209,6 +222,56 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
                 )
                 foodIntakeRepository.insertFoodIntake(foodIntake)
             }
+        }
+    }
+    
+    // NutriCoach Methods
+    
+    // Generate a motivational tip using Gemini AI
+    fun generateMotivationalTip() {
+        val user = _currentUser.value ?: return
+        
+        viewModelScope.launch {
+            try {
+                val tip = nutriCoachRepository.generateMotivationalTip(user)
+                _latestTip.value = tip
+                
+                // Save the tip to the database
+                nutriCoachRepository.saveTip(user.userID, tip)
+                
+                // Update the tips list
+                loadTipsForCurrentUser()
+            } catch (e: Exception) {
+                // Handle errors - could set an error state here
+                _latestTip.value = "Enjoy a variety of fruits daily for better health! 🍎 🍌"
+            }
+        }
+    }
+    
+    // Load all tips for the current user
+    fun loadTipsForCurrentUser() {
+        val userId = _currentUser.value?.userID ?: return
+        
+        viewModelScope.launch {
+            nutriCoachRepository.getTipsForUser(userId).collect { tips ->
+                _nutriCoachTips.value = tips
+            }
+        }
+    }
+    
+    // Check if the user's fruit score is optimal
+    fun checkFruitScore() {
+        val user = _currentUser.value ?: return
+        _isFruitScoreOptimal.value = nutriCoachRepository.isFruitScoreOptimal(user)
+    }
+    
+    // Get the latest tip for the current user
+    fun loadLatestTip() {
+        val userId = _currentUser.value?.userID ?: return
+        
+        viewModelScope.launch {
+            val latestTipEntity = nutriCoachRepository.getLatestTipForUser(userId)
+            _latestTip.value = latestTipEntity?.message
         }
     }
 }
