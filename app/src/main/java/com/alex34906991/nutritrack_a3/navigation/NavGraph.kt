@@ -1,4 +1,4 @@
-package com.alex34906991.nutritrack_a1.navigation
+package com.alex34906991.nutritrack_a3.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -14,8 +14,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.alex34906991.nutritrack_a1.ui.pages.*
-import com.alex34906991.nutritrack_a1.ui.NutriTrackViewModel
+import com.alex34906991.nutritrack_a3.ui.pages.*
+import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 
 @Composable
 fun AppNavHost(viewModel: NutriTrackViewModel) {

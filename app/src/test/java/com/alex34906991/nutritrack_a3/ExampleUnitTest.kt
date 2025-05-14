@@ -1,4 +1,4 @@
-package com.alex34906991.nutritrack_a1
+package com.alex34906991.nutritrack_a3
 
 import org.junit.Test
 

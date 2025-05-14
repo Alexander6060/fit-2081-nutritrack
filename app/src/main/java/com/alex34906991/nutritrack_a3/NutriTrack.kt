@@ -1,15 +1,14 @@
-package com.alex34906991.nutritrack_a1
-import android.app.Application
+package com.alex34906991.nutritrack_a3
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.application
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.alex34906991.nutritrack_a1.data.CSVDataParser
-import com.alex34906991.nutritrack_a1.data.UserData
-import com.alex34906991.nutritrack_a1.ui.NutriTrackViewModel
-import com.alex34906991.nutritrack_a1.navigation.AppNavHost
+import com.alex34906991.nutritrack_a3.data.CSVDataParser
+import com.alex34906991.nutritrack_a3.data.UserData
+import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
+import com.alex34906991.nutritrack_a3.navigation.AppNavHost
 
 @Composable
 fun NutriTrackApp(viewModel: NutriTrackViewModel = viewModel()) {

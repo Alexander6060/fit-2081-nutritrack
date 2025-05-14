@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Nutritrack_a1"
+rootProject.name = "Nutritrack_a3"
 include(":app")

@@ -1,5 +1,6 @@
-package com.alex34906991.nutritrack_a1.ui.pages
+package com.alex34906991.nutritrack_a3.ui.pages
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -7,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 
 @Composable
 fun WelcomeScreen(
@@ -19,8 +21,18 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // App Logo or Image can go here
+
         Text(text = "NutriTrack", style = androidx.compose.material3.MaterialTheme.typography.headlineLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Image(
+            painter = rememberAsyncImagePainter("file:///android_asset/nutri-logo.jpeg"),
+            contentDescription = "Delicious Food",
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // Disclaimer text

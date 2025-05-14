@@ -1,4 +1,4 @@
-package com.alex34906991.nutritrack_a1.ui.pages
+package com.alex34906991.nutritrack_a3.ui.pages
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.alex34906991.nutritrack_a1.ui.NutriTrackViewModel
+import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 
 @Composable
 fun LoginScreen(

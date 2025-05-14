@@ -1,8 +1,8 @@
-package com.alex34906991.nutritrack_a1.ui
+package com.alex34906991.nutritrack_a3.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.alex34906991.nutritrack_a1.data.UserData
+import com.alex34906991.nutritrack_a3.data.UserData
 
 class NutriTrackViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -21,6 +21,7 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun getCurrentUser(): UserData? {
+        println(currentUser)
         return currentUser
     }
 

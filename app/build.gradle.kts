@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.alex34906991.nutritrack_a1"
+    namespace = "com.alex34906991.nutritrack_a3"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.alex34906991.nutritrack_a1"
+        applicationId = "com.alex34906991.nutritrack_a3"
         minSdk = 35
         targetSdk = 35
         versionCode = 1

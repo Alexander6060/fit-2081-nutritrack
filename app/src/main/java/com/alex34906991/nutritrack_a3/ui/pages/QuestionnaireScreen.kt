@@ -1,6 +1,7 @@
-package com.alex34906991.nutritrack_a1.ui.pages
+package com.alex34906991.nutritrack_a3.ui.pages
 
 import android.app.TimePickerDialog
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.alex34906991.nutritrack_a1.ui.NutriTrackViewModel
+import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -32,8 +33,22 @@ fun QuestionnaireScreen(
     viewModel: NutriTrackViewModel,
     onSave: () -> Unit
 ) {
-    val categories = listOf("Fruits", "Vegetables", "Grains", "Meat", "Dairy", "Sugary Drinks")
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("questionnairePrefs", Context.MODE_PRIVATE)
+    }
+
+    val categories = listOf(
+        "Vegetables",
+        "Fruits",
+        "Grains",
+        "Meat & Protein",
+        "Dairy",
+        "Sugary Drinks",
+        "Alcohol"
+    )
     val checkedState = remember { mutableStateMapOf<String, Boolean>() }
+    // Initialize checkedState for each category. We’ll load saved values in LaunchedEffect below.
     categories.forEach { category -> checkedState.putIfAbsent(category, false) }
 
     // Updated list of personas with details and image resources.
@@ -84,6 +99,37 @@ fun QuestionnaireScreen(
     var showValidationError by remember { mutableStateOf(false) }
     var validationErrorMessage by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        // Retrieve the previously selected persona name
+        val storedPersonaName = sharedPreferences.getString("selectedPersona", null)
+        storedPersonaName?.let { personaName ->
+            personas.find { it.name == personaName }?.let {
+                selectedPersona = it
+            }
+        }
+
+        // Restore the checked categories
+        val storedCategories = sharedPreferences.getStringSet("selectedCategories", emptySet())
+        storedCategories?.forEach { cat ->
+            if (categories.contains(cat)) {
+                checkedState[cat] = true
+            }
+        }
+
+        // Restore times if they exist
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+
+        sharedPreferences.getString("biggestMealTime", null)?.let {
+            biggestMealTime = LocalTime.parse(it, timeFormatter)
+        }
+        sharedPreferences.getString("sleepTime", null)?.let {
+            sleepTime = LocalTime.parse(it, timeFormatter)
+        }
+        sharedPreferences.getString("wakeTime", null)?.let {
+            wakeTime = LocalTime.parse(it, timeFormatter)
+        }
+    }
+
     val scrollState = rememberScrollState()
 
     Column(
@@ -94,7 +140,7 @@ fun QuestionnaireScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Select your food categories:")
+        Text(text = "The food categories you can eat:")
 
         categories.forEach { category ->
             Row(
@@ -103,7 +149,9 @@ fun QuestionnaireScreen(
             ) {
                 Checkbox(
                     checked = checkedState[category] == true,
-                    onCheckedChange = { checkedState[category] = it }
+                    onCheckedChange = { checked ->
+                        checkedState[category] = checked
+                    }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = category)
@@ -163,13 +211,29 @@ fun QuestionnaireScreen(
                     validationErrorMessage = "Please select a persona."
                     showValidationError = true
                 } else {
-                    // All validation checks passed, proceed to save
+                    // Store data in SharedPreferences
+                    with(sharedPreferences.edit()) {
+                        putString("selectedPersona", selectedPersona?.name.orEmpty())
+
+                        val chosenCategories = checkedState.filterValues { it }.keys
+                        putStringSet("selectedCategories", chosenCategories)
+
+                        val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+                        putString("biggestMealTime", biggestMealTime.format(formatter))
+                        putString("sleepTime", sleepTime.format(formatter))
+                        putString("wakeTime", wakeTime.format(formatter))
+
+                        apply() // Don't forget to apply or commit
+                    }
+
+                    // Optionally still save via your ViewModel if desired
                     viewModel.saveQuestionnaireData(
                         selectedPersona?.name.orEmpty(),
                         biggestMealTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         sleepTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         wakeTime.format(DateTimeFormatter.ofPattern("HH:mm"))
                     )
+
                     onSave()
                 }
             },

@@ -1,4 +1,4 @@
-package com.alex34906991.nutritrack_a1
+package com.alex34906991.nutritrack_a3
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

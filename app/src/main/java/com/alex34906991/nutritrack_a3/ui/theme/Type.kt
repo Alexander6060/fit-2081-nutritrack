@@ -1,4 +1,4 @@
-package com.alex34906991.nutritrack_a1.ui.theme
+package com.alex34906991.nutritrack_a3.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
