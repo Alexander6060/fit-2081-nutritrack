@@ -103,6 +103,11 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
     fun getPatientRepository(): PatientRepository {
         return patientRepository
     }
+    
+    // Getter method for food intake repository
+    fun getFoodIntakeRepository(): FoodIntakeRepository {
+        return foodIntakeRepository
+    }
 
     fun setUsers(users: List<UserData>) {
         _users.clear()
@@ -219,7 +224,8 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
         persona: String,
         biggestMeal: String,
         sleep: String,
-        wake: String
+        wake: String,
+        selectedCategories: List<String>
     ) {
         personaSelection = persona
         biggestMealTime = biggestMeal
@@ -236,7 +242,7 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
                     quantity = null,
                     servingSize = null,
                     timeConsumed = Date().time,
-                    category = "Persona: $persona, Biggest Meal: $biggestMeal, Sleep: $sleep, Wake: $wake"
+                    category = "Persona: $persona, Biggest Meal: $biggestMeal, Sleep: $sleep, Wake: $wake, Categories: [${selectedCategories.joinToString(", ")}]"
                 )
                 foodIntakeRepository.insertFoodIntake(foodIntake)
             }
