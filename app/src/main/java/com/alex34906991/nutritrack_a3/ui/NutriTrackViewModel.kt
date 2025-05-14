@@ -6,20 +6,26 @@ import androidx.lifecycle.viewModelScope
 import com.alex34906991.nutritrack_a3.data.UserData
 import com.alex34906991.nutritrack_a3.data.database.FoodIntakeEntity
 import com.alex34906991.nutritrack_a3.data.database.NutriCoachTipEntity
+import com.alex34906991.nutritrack_a3.data.model.Fruit
 import com.alex34906991.nutritrack_a3.data.repository.FoodIntakeRepository
+import com.alex34906991.nutritrack_a3.data.repository.FruitRepository
 import com.alex34906991.nutritrack_a3.data.repository.NutriCoachRepository
 import com.alex34906991.nutritrack_a3.data.repository.PatientRepository
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Date
 
+@OptIn(FlowPreview::class)
 class NutriTrackViewModel(application: Application) : AndroidViewModel(application) {
 
     private val patientRepository = PatientRepository(application.applicationContext)
     private val foodIntakeRepository = FoodIntakeRepository(application.applicationContext)
     private val nutriCoachRepository = NutriCoachRepository(application.applicationContext)
+    private val fruitRepository = FruitRepository(application.applicationContext)
 
     private val _users = mutableListOf<UserData>()
     val users: List<UserData> get() = _users
@@ -54,6 +60,22 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
     private val _isFruitScoreOptimal = MutableStateFlow(false)
     val isFruitScoreOptimal: StateFlow<Boolean> = _isFruitScoreOptimal
 
+    // Fruit search related state
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+    
+    private val _searchResults = MutableStateFlow<List<Fruit>>(emptyList())
+    val searchResults: StateFlow<List<Fruit>> = _searchResults
+    
+    private val _selectedFruit = MutableStateFlow<Fruit?>(null)
+    val selectedFruit: StateFlow<Fruit?> = _selectedFruit
+    
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching
+    
+    private val _searchError = MutableStateFlow<String?>(null)
+    val searchError: StateFlow<String?> = _searchError
+
     init {
         // Load initial data if needed
         viewModelScope.launch {
@@ -61,6 +83,19 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
             
             // Check for an already logged-in user
             checkLoggedInUser()
+        }
+        
+        // Set up search query debounce for autocomplete
+        viewModelScope.launch {
+            searchQuery
+                .debounce(300) // Wait for 300ms of inactivity before searching
+                .collect { query ->
+                    if (query.length >= 2) {
+                        searchFruits(query)
+                    } else {
+                        _searchResults.value = emptyList()
+                    }
+                }
         }
     }
 
@@ -273,6 +308,77 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
             val latestTipEntity = nutriCoachRepository.getLatestTipForUser(userId)
             _latestTip.value = latestTipEntity?.message
         }
+    }
+    
+    // Update search query
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+    
+    // Search fruits with the current query
+    private fun searchFruits(query: String) {
+        viewModelScope.launch {
+            _isSearching.value = true
+            _searchError.value = null
+            
+            try {
+                fruitRepository.searchFruits(query).collect { result ->
+                    result.onSuccess { fruits ->
+                        _searchResults.value = fruits
+                    }.onFailure { error ->
+                        _searchError.value = "Error searching fruits: ${error.message}"
+                        _searchResults.value = emptyList()
+                    }
+                    _isSearching.value = false
+                }
+            } catch (e: Exception) {
+                _searchError.value = "Error: ${e.message}"
+                _isSearching.value = false
+            }
+        }
+    }
+    
+    // Get fruit details by name
+    fun getFruitDetails(name: String) {
+        viewModelScope.launch {
+            _isSearching.value = true
+            _searchError.value = null
+            
+            try {
+                fruitRepository.getFruitByName(name).collect { result ->
+                    result.onSuccess { fruit ->
+                        _selectedFruit.value = fruit
+                    }.onFailure { error ->
+                        _searchError.value = "Error getting fruit details: ${error.message}"
+                    }
+                    _isSearching.value = false
+                }
+            } catch (e: Exception) {
+                _searchError.value = "Error: ${e.message}"
+                _isSearching.value = false
+            }
+        }
+    }
+    
+    // Clear selected fruit
+    fun clearSelectedFruit() {
+        _selectedFruit.value = null
+    }
+    
+    // Add fruit as food intake
+    fun addFruitAsFoodIntake(fruit: Fruit, quantity: Double = 1.0) {
+        val nutritionInfo = "Calories: ${fruit.nutrition.calories}, " +
+                           "Carbs: ${fruit.nutrition.carbohydrates}g, " +
+                           "Protein: ${fruit.nutrition.protein}g, " +
+                           "Fat: ${fruit.nutrition.fat}g, " +
+                           "Sugar: ${fruit.nutrition.sugar}g"
+                           
+        addFoodIntake(
+            foodName = fruit.name,
+            quantity = quantity,
+            servingSize = "1 serving",
+            category = "Fruit - $nutritionInfo"
+        )
     }
 }
 

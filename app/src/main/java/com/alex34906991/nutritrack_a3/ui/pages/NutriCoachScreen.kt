@@ -2,44 +2,73 @@ package com.alex34906991.nutritrack_a3.ui.pages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import coil.compose.rememberAsyncImagePainter
 import com.alex34906991.nutritrack_a3.data.database.NutriCoachTipEntity
+import com.alex34906991.nutritrack_a3.data.model.Fruit
 import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Chat
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun NutriCoachScreen(
     viewModel: NutriTrackViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
     
-    var fruitName by remember { mutableStateOf("") }
-    var fruitDetails by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    var isLoading by remember { mutableStateOf(false) }
+    // Fruit search state
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
+    val selectedFruit by viewModel.selectedFruit.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
+    val searchError by viewModel.searchError.collectAsState()
     
+    // Dropdown state
+    var isExpanded by remember { mutableStateOf(false) }
+    
+    // Existing state
     val latestTip by viewModel.latestTip.collectAsState()
     val tips by viewModel.nutriCoachTips.collectAsState()
     val isFruitScoreOptimal by viewModel.isFruitScoreOptimal.collectAsState()
     
     val showTipsDialog = remember { mutableStateOf(false) }
+    
+    // Keyboard and focus controllers
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    
+    // Scroll state for the main screen
+    val scrollState = rememberScrollState()
     
     // Load the latest tip and check fruit score when screen opens
     LaunchedEffect(Unit) {
@@ -55,7 +84,8 @@ fun NutriCoachScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -68,86 +98,211 @@ fun NutriCoachScreen(
             // Conditional section based on fruit score
             if (!isFruitScoreOptimal) {
                 // Fruit Information Section
-                Column(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    Text(
-                        text = "Fruit Name",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(16.dp)
                     ) {
-                        OutlinedTextField(
-                            value = fruitName,
-                            onValueChange = { fruitName = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("banana") }
+                        Text(
+                            text = "Find Fruit Nutrition Information",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                         
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    isLoading = true
-                                    // In a real implementation, this would call the FruityVice API
-                                    // For this demo, we're simulating the response
-                                    val mockResponse = mapOf(
-                                        "family" to "Musaceae",
-                                        "calories" to "96",
-                                        "fat" to "0.2",
-                                        "sugar" to "17.2",
-                                        "carbohydrates" to "22",
-                                        "protein" to "1"
-                                    )
-                                    fruitDetails = mockResponse
-                                    isLoading = false
-                                }
-                            },
-                            enabled = fruitName.isNotBlank()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Search,
-                                contentDescription = "Search",
-                                tint = Color.White
-                            )
-                            Text("Details")
-                        }
-                    }
-                    
-                    // Display fruit details if available
-                    if (fruitDetails.isNotEmpty()) {
-                        Card(
+                        // Search field with autocomplete
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp)
                         ) {
-                            Column(
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { 
+                                    viewModel.updateSearchQuery(it)
+                                    isExpanded = it.length >= 2
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp)
+                                    .onFocusChanged { 
+                                        isExpanded = it.isFocused && searchQuery.length >= 2 && searchResults.isNotEmpty() 
+                                    },
+                                placeholder = { Text("Enter fruit name (e.g. banana)") },
+                                singleLine = true,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Search,
+                                        contentDescription = "Search"
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotBlank()) {
+                                        IconButton(onClick = {
+                                            viewModel.updateSearchQuery("")
+                                            isExpanded = false
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "Clear search"
+                                            )
+                                        }
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(
+                                    onSearch = {
+                                        if (searchQuery.isNotBlank()) {
+                                            coroutineScope.launch {
+                                                viewModel.getFruitDetails(searchQuery)
+                                            }
+                                            keyboardController?.hide()
+                                            focusManager.clearFocus()
+                                            isExpanded = false
+                                        }
+                                    }
+                                )
+                            )
+                            
+                            // Autocomplete dropdown
+                            DropdownMenu(
+                                expanded = isExpanded && searchResults.isNotEmpty(),
+                                onDismissRequest = { isExpanded = false },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp),
+                                properties = PopupProperties(focusable = false)
                             ) {
-                                fruitDetails.forEach { (key, value) ->
+                                searchResults.forEach { fruit ->
+                                    DropdownMenuItem(
+                                        text = { Text(fruit.name) },
+                                        onClick = {
+                                            viewModel.updateSearchQuery(fruit.name)
+                                            viewModel.getFruitDetails(fruit.name)
+                                            isExpanded = false
+                                            keyboardController?.hide()
+                                            focusManager.clearFocus()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Loading indicator
+                        if (isSearching) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        
+                        // Error message
+                        if (searchError != null) {
+                            Text(
+                                text = searchError ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        
+                        // Display fruit details if available
+                        selectedFruit?.let { fruit ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = key,
-                                            style = MaterialTheme.typography.bodyMedium
+                                            text = fruit.name,
+                                            style = MaterialTheme.typography.titleLarge
                                         )
+                                        
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.addFruitAsFoodIntake(fruit)
+                                                // Show a snackbar or some indication
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Add,
+                                                contentDescription = "Add to food intake"
+                                            )
+                                        }
+                                    }
+                                    
+                                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                                    
+                                    Text(
+                                        text = "Family: ${fruit.family}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Genus: ${fruit.genus}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                                    
+                                    Text(
+                                        text = "Nutrition Facts (per 100g):",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Calories: ${fruit.nutrition.calories}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Carbohydrates: ${fruit.nutrition.carbohydrates}g",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Protein: ${fruit.nutrition.protein}g",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Fat: ${fruit.nutrition.fat}g",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    Text(
+                                        text = "Sugar: ${fruit.nutrition.sugar}g",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                    
+                                    fruit.nutrition.fiber?.let {
                                         Text(
-                                            text = ": $value",
-                                            style = MaterialTheme.typography.bodyMedium
+                                            text = "Fiber: ${it}g",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(vertical = 2.dp)
                                         )
                                     }
                                 }
@@ -233,15 +388,15 @@ fun NutriCoachScreen(
                 onDismissRequest = { showTipsDialog.value = false },
                 title = { Text("AI Tips") },
                 text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 300.dp)
-                    ) {
-                        if (tips.isEmpty()) {
-                            Text("No tips yet. Generate some motivational messages!")
-                        } else {
-                            tips.forEach { tip ->
+                    if (tips.isEmpty()) {
+                        Text("No tips yet. Generate some motivational messages!")
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 300.dp)
+                        ) {
+                            items(tips) { tip ->
                                 TipItem(tip)
                                 Divider(modifier = Modifier.padding(vertical = 8.dp))
                             }
