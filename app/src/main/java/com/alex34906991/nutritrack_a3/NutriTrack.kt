@@ -28,11 +28,9 @@ fun NutriTrackApp(viewModel: NutriTrackViewModel = viewModel()) {
         patientRepository.getAllPatients().firstOrNull()?.let { patients ->
             userList.clear()
             userList.addAll(patients)
+            viewModel.setUsers(patients)
         }
     }
-
-    // Pass the userList into the viewModel
-    viewModel.setUsers(userList)
 
     // Start the Navigation
     AppNavHost(viewModel = viewModel)

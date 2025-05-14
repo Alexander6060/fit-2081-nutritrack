@@ -2,14 +2,13 @@ package com.alex34906991.nutritrack_a3.ui.pages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.alex34906991.nutritrack_a3.data.UserData
 import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 
 @Composable
@@ -17,27 +16,17 @@ fun HomeScreen(
     viewModel: NutriTrackViewModel,
     onEditClick: () -> Unit
 ) {
-    val user = viewModel.getCurrentUser()
+    val user by viewModel.currentUser.collectAsState()
+    val foodScore = calculateFoodScore(user)
 
-    // Retrieve the correct HEIFA total based on the user's sex
-    val foodScore = remember(user) {
-        if (user?.sex?.lowercase() == "male") {
-            user.totalHeifaScoreMale ?: 0
-        } else {
-            user?.totalHeifaScoreFemale ?: 0
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Hello, ${user?.userID ?: "Guest"}",
+                text = "Hello, ${user?.name ?: user?.userID ?: "Guest"}",
                 style = MaterialTheme.typography.headlineSmall
             )
 
@@ -50,8 +39,6 @@ fun HomeScreen(
                     .height(200.dp)
                     .fillMaxWidth()
             )
-
-
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -77,4 +64,17 @@ fun HomeScreen(
             }
         }
     }
+}
+
+private fun calculateFoodScore(user: UserData?): Int {
+    if (user == null) return 0
+    
+    // Simple mock score calculation - in a real app this would be more sophisticated
+    val baseScore = if (user.sex.equals("Male", ignoreCase = true)) {
+        user.totalHeifaScoreMale
+    } else {
+        user.totalHeifaScoreFemale
+    } ?: 50.0
+    
+    return (baseScore * 100 / 100.0).toInt().coerceIn(0, 100)
 }

@@ -5,15 +5,32 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 
 @Composable
 fun WelcomeScreen(
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    viewModel: NutriTrackViewModel? = null
 ) {
+    // Check if user is already logged in
+    if (viewModel != null) {
+        val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+        
+        // Auto-navigate to home if logged in
+        LaunchedEffect(isLoggedIn) {
+            if (isLoggedIn) {
+                onLoginClick()
+            }
+        }
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()

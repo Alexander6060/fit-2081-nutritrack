@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -21,9 +24,21 @@ import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 fun AppNavHost(viewModel: NutriTrackViewModel) {
     val navController = rememberNavController()
     // Define routes that should show the bottom navigation bar
-    val bottomNavItems = listOf("home", "insights")
+    val bottomNavItems = listOf("home", "insights", "settings")
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    
+    // Check if user is already logged in
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    
+    // Auto-navigate to home if logged in
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn && (currentRoute == "welcome" || currentRoute == "login")) {
+            navController.navigate("home") {
+                popUpTo("welcome") { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -50,13 +65,16 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
         ) {
             composable("welcome") {
                 WelcomeScreen(
-                    onLoginClick = { navController.navigate("login") }
+                    onLoginClick = { navController.navigate("login") },
+                    viewModel = viewModel
                 )
             }
             composable("login") {
                 LoginScreen(
                     viewModel = viewModel,
-                    onLoginSuccess = { navController.navigate("questionnaire") }
+                    onLoginSuccess = { navController.navigate("questionnaire") {
+                        popUpTo("welcome") { inclusive = true }
+                    } }
                 )
             }
             composable("questionnaire") {
@@ -76,6 +94,18 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
                     viewModel = viewModel,
                     onImproveDietClick = {
                         // Future: navigate to NutriCoach
+                    }
+                )
+            }
+            composable("settings") {
+                SettingsScreen(
+                    viewModel = viewModel,
+                    onLogout = {
+                        navController.navigate("welcome") {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = true
+                            }
+                        }
                     }
                 )
             }
@@ -100,6 +130,12 @@ fun BottomNavigationBar(
             onClick = { onItemClick("insights") },
             icon = { Icon(Icons.Rounded.Add, contentDescription = "Insight") },
             label = { Text("Insights") }
+        )
+        NavigationBarItem(
+            selected = selectedRoute == "settings",
+            onClick = { onItemClick("settings") },
+            icon = { Icon(Icons.Rounded.Settings, contentDescription = "Settings") },
+            label = { Text("Settings") }
         )
     }
 }
