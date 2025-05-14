@@ -1,0 +1,94 @@
+package com.alex34906991.nutritrack_a3.data.database
+
+import com.alex34906991.nutritrack_a3.data.UserData
+
+object DataMapper {
+    
+    fun mapUserDataToPatientEntity(userData: UserData): PatientEntity {
+        return PatientEntity(
+            userId = userData.userID,
+            phoneNumber = userData.phoneNumber,
+            sex = userData.sex,
+            totalHeifaScoreMale = userData.totalHeifaScoreMale,
+            totalHeifaScoreFemale = userData.totalHeifaScoreFemale,
+            discretionaryHeifaScoreMale = userData.discretionaryHeifaScoreMale,
+            discretionaryHeifaScoreFemale = userData.discretionaryHeifaScoreFemale,
+            discretionaryServeSize = userData.discretionaryServeSize,
+            vegetableScoreMale = userData.vegetableScoreMale,
+            vegetableScoreFemale = userData.vegetableScoreFemale,
+            vegetableServeSize = userData.vegetableServeSize,
+            fruitScoreMale = userData.fruitScoreMale,
+            fruitScoreFemale = userData.fruitScoreFemale,
+            fruitServeSize = userData.fruitServeSize,
+            grainsScoreMale = userData.grainsScoreMale,
+            grainsScoreFemale = userData.grainsScoreFemale,
+            grainsServeSize = userData.grainsServeSize,
+            meatScoreMale = userData.meatScoreMale,
+            meatScoreFemale = userData.meatScoreFemale,
+            meatServeSize = userData.meatServeSize,
+            dairyScoreMale = userData.dairyScoreMale,
+            dairyScoreFemale = userData.dairyScoreFemale,
+            dairyServeSize = userData.dairyServeSize,
+            waterIntake = userData.waterIntake,
+            fatSaturatedScoreMale = userData.fatSaturatedScoreMale,
+            fatSaturatedScoreFemale = userData.fatSaturatedScoreFemale,
+            fatSaturatedIntake = userData.fatSaturatedIntake,
+            fatUnsaturatedScoreMale = userData.fatUnsaturatedScoreMale,
+            fatUnsaturatedScoreFemale = userData.fatUnsaturatedScoreFemale,
+            fatUnsaturatedServeSize = userData.fatUnsaturatedServeSize,
+            sodiumScoreMale = userData.sodiumScoreMale,
+            sodiumScoreFemale = userData.sodiumScoreFemale,
+            sodiumIntake = userData.sodiumIntake,
+            sugarScoreMale = userData.sugarScoreMale,
+            sugarScoreFemale = userData.sugarScoreFemale,
+            addedSugarIntake = userData.addedSugarIntake,
+            alcoholScoreMale = userData.alcoholScoreMale,
+            alcoholScoreFemale = userData.alcoholScoreFemale,
+            alcoholIntake = userData.alcoholIntake
+        )
+    }
+    
+    fun mapPatientEntityToUserData(patientEntity: PatientEntity): UserData {
+        return UserData(
+            phoneNumber = patientEntity.phoneNumber,
+            userID = patientEntity.userId,
+            sex = patientEntity.sex,
+            totalHeifaScoreMale = patientEntity.totalHeifaScoreMale,
+            totalHeifaScoreFemale = patientEntity.totalHeifaScoreFemale,
+            discretionaryHeifaScoreMale = patientEntity.discretionaryHeifaScoreMale,
+            discretionaryHeifaScoreFemale = patientEntity.discretionaryHeifaScoreFemale,
+            discretionaryServeSize = patientEntity.discretionaryServeSize,
+            vegetableScoreMale = patientEntity.vegetableScoreMale,
+            vegetableScoreFemale = patientEntity.vegetableScoreFemale,
+            vegetableServeSize = patientEntity.vegetableServeSize,
+            fruitScoreMale = patientEntity.fruitScoreMale,
+            fruitScoreFemale = patientEntity.fruitScoreFemale,
+            fruitServeSize = patientEntity.fruitServeSize,
+            grainsScoreMale = patientEntity.grainsScoreMale,
+            grainsScoreFemale = patientEntity.grainsScoreFemale,
+            grainsServeSize = patientEntity.grainsServeSize,
+            meatScoreMale = patientEntity.meatScoreMale,
+            meatScoreFemale = patientEntity.meatScoreFemale,
+            meatServeSize = patientEntity.meatServeSize,
+            dairyScoreMale = patientEntity.dairyScoreMale,
+            dairyScoreFemale = patientEntity.dairyScoreFemale,
+            dairyServeSize = patientEntity.dairyServeSize,
+            waterIntake = patientEntity.waterIntake,
+            fatSaturatedScoreMale = patientEntity.fatSaturatedScoreMale,
+            fatSaturatedScoreFemale = patientEntity.fatSaturatedScoreFemale,
+            fatSaturatedIntake = patientEntity.fatSaturatedIntake,
+            fatUnsaturatedScoreMale = patientEntity.fatUnsaturatedScoreMale,
+            fatUnsaturatedScoreFemale = patientEntity.fatUnsaturatedScoreFemale,
+            fatUnsaturatedServeSize = patientEntity.fatUnsaturatedServeSize,
+            sodiumScoreMale = patientEntity.sodiumScoreMale,
+            sodiumScoreFemale = patientEntity.sodiumScoreFemale,
+            sodiumIntake = patientEntity.sodiumIntake,
+            sugarScoreMale = patientEntity.sugarScoreMale,
+            sugarScoreFemale = patientEntity.sugarScoreFemale,
+            addedSugarIntake = patientEntity.addedSugarIntake,
+            alcoholScoreMale = patientEntity.alcoholScoreMale,
+            alcoholScoreFemale = patientEntity.alcoholScoreFemale,
+            alcoholIntake = patientEntity.alcoholIntake
+        )
+    }
+} 

@@ -66,4 +66,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     annotationProcessor(libs.androidx.room.compiler)
+    
+    // Add Room KTX for Kotlin Extensions and Coroutines support
+    implementation(libs.androidx.room.ktx)
+    
+    // Preferences
+    implementation(libs.androidx.preference)
 }
