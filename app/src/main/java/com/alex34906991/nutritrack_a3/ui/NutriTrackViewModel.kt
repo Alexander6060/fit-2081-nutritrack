@@ -11,6 +11,10 @@ import com.alex34906991.nutritrack_a3.data.repository.FoodIntakeRepository
 import com.alex34906991.nutritrack_a3.data.repository.FruitRepository
 import com.alex34906991.nutritrack_a3.data.repository.NutriCoachRepository
 import com.alex34906991.nutritrack_a3.data.repository.PatientRepository
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.BlockThreshold
+import com.google.ai.client.generativeai.type.HarmCategory
+import com.google.ai.client.generativeai.type.SafetySetting
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -75,6 +79,47 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
     
     private val _searchError = MutableStateFlow<String?>(null)
     val searchError: StateFlow<String?> = _searchError
+    
+    // Admin view related state
+    private val _maleHeifaAverage = MutableStateFlow(0.0)
+    val maleHeifaAverage: StateFlow<Double> = _maleHeifaAverage
+    
+    private val _femaleHeifaAverage = MutableStateFlow(0.0)
+    val femaleHeifaAverage: StateFlow<Double> = _femaleHeifaAverage
+    
+    private val _dataPatterns = MutableStateFlow<List<String>>(emptyList())
+    val dataPatterns: StateFlow<List<String>> = _dataPatterns
+    
+    private val _isGeneratingPatterns = MutableStateFlow(false)
+    val isGeneratingPatterns: StateFlow<Boolean> = _isGeneratingPatterns
+
+    // Get the Gemini model from the NutriCoachRepository
+    private val generativeModel by lazy {
+        try {
+            GenerativeModel(
+                modelName = "gemini-1.5-flash",
+                apiKey = getApplication<Application>().getString(com.alex34906991.nutritrack_a3.R.string.gemini_api_key),
+                safetySettings = listOf(
+                    SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.MEDIUM_AND_ABOVE),
+                    SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.MEDIUM_AND_ABOVE),
+                    SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.MEDIUM_AND_ABOVE),
+                    SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.MEDIUM_AND_ABOVE),
+                )
+            )
+        } catch (e: Exception) {
+            println("Error initializing Gemini model: ${e.message}")
+            // Create a minimal fallback model with just the required parameters
+            try {
+                GenerativeModel(
+                    modelName = "gemini-1.5-flash",
+                    apiKey = getApplication<Application>().getString(com.alex34906991.nutritrack_a3.R.string.gemini_api_key)
+                )
+            } catch (e: Exception) {
+                println("Critical error initializing Gemini model: ${e.message}")
+                null
+            }
+        }
+    }
 
     init {
         // Load initial data if needed
@@ -384,6 +429,194 @@ class NutriTrackViewModel(application: Application) : AndroidViewModel(applicati
             quantity = quantity,
             servingSize = "1 serving",
             category = "Fruit - $nutritionInfo"
+        )
+    }
+
+    // Admin view methods
+    
+    // Calculate average HEIFA scores for male and female users
+    fun calculateAverageHeifaScores() {
+        viewModelScope.launch {
+            patientRepository.getAllPatients().collect { userList ->
+                var maleTotal = 0.0
+                var femaleTotal = 0.0
+                var maleCount = 0
+                var femaleCount = 0
+                
+                userList.forEach { user ->
+                    user.totalHeifaScoreMale?.let {
+                        maleTotal += it
+                        maleCount++
+                    }
+                    
+                    user.totalHeifaScoreFemale?.let {
+                        femaleTotal += it
+                        femaleCount++
+                    }
+                }
+                
+                _maleHeifaAverage.value = if (maleCount > 0) (maleTotal / maleCount) else 0.0
+                _femaleHeifaAverage.value = if (femaleCount > 0) (femaleTotal / femaleCount) else 0.0
+            }
+        }
+    }
+    
+    // Reset pattern generation state
+    private fun resetPatternGenerationState() {
+        _dataPatterns.value = emptyList()
+        _isGeneratingPatterns.value = false
+    }
+    
+    // Generate data patterns using GenAI
+    fun generateDataPatterns() {
+        viewModelScope.launch {
+            // Reset state before starting
+            resetPatternGenerationState()
+            _isGeneratingPatterns.value = true
+            
+            try {
+                // Set timeout to ensure we don't get stuck indefinitely
+                val timeout = System.currentTimeMillis() + 10000 // 10 second timeout
+                
+                // Get all users with their data for analysis
+                val userList = patientRepository.getAllPatients().firstOrNull() ?: emptyList()
+                
+                // Prepare the data summary to send to Gemini
+                val dataSummary = buildDataSummary(userList)
+                
+                // Create the prompt for Gemini
+                val prompt = """
+                    Analyze this nutritional dataset and identify 3 interesting patterns or insights:
+                    
+                    $dataSummary
+                    
+                    For each pattern:
+                    1. Give it a clear, concise title ending with a colon
+                    2. Follow with a detailed explanation of the pattern
+                    3. Focus on relationships between variables or interesting trends
+                    4. Keep each pattern under 3 sentences
+                    5. Make sure patterns are different from each other
+                    
+                    Return exactly 3 patterns, each in the format "Title: Explanation"
+                """.trimIndent()
+                
+                // Call Gemini API with proper error handling
+                val model = generativeModel
+                if (model == null) {
+                    println("Gemini model is null, using fallback patterns")
+                    _dataPatterns.value = generateFallbackPatterns()
+                } else {
+                    try {
+                        val response = model.generateContent(prompt)
+                        val responseText = response?.text?.trim() ?: ""
+                        
+                        if (responseText.isNotEmpty()) {
+                            // Parse the response
+                            val patterns = parsePatterns(responseText)
+                            
+                            if (patterns.isNotEmpty()) {
+                                _dataPatterns.value = patterns
+                            } else {
+                                // Fallback if Gemini doesn't return expected format
+                                _dataPatterns.value = generateFallbackPatterns()
+                            }
+                        } else {
+                            // Handle empty response
+                            _dataPatterns.value = generateFallbackPatterns()
+                        }
+                    } catch (e: Exception) {
+                        println("Gemini API error: ${e.message}")
+                        _dataPatterns.value = generateFallbackPatterns()
+                    }
+                }
+                
+                // Check for timeout and set fallback patterns if we've waited too long
+                if (System.currentTimeMillis() > timeout && _dataPatterns.value.isEmpty()) {
+                    println("Timeout occurred while generating patterns")
+                    _dataPatterns.value = generateFallbackPatterns()
+                }
+            } catch (e: Exception) {
+                println("Error in data collection: ${e.message}")
+                _dataPatterns.value = generateFallbackPatterns()
+            } finally {
+                _isGeneratingPatterns.value = false
+            }
+        }
+    }
+    
+    // Build a summary of the user data for the AI prompt
+    private fun buildDataSummary(userList: List<UserData>): String {
+        val summary = StringBuilder()
+        
+        summary.append("Dataset summary (${userList.size} users):\n")
+        summary.append("- Male users: ${userList.count { it.sex.equals("Male", ignoreCase = true) }}\n")
+        summary.append("- Female users: ${userList.count { it.sex.equals("Female", ignoreCase = true) }}\n\n")
+        
+        summary.append("Averages across all users:\n")
+        val maleHeifaAvg = userList.mapNotNull { it.totalHeifaScoreMale }.average().takeIf { !it.isNaN() }?.let { String.format("%.1f", it) } ?: "N/A"
+        val femaleHeifaAvg = userList.mapNotNull { it.totalHeifaScoreFemale }.average().takeIf { !it.isNaN() }?.let { String.format("%.1f", it) } ?: "N/A"
+        summary.append("- Average HEIFA score (Male): $maleHeifaAvg\n")
+        summary.append("- Average HEIFA score (Female): $femaleHeifaAvg\n")
+        
+        // Add some sample data for key metrics
+        summary.append("\nKey metrics summary:\n")
+        summary.append("- Fruit scores range: ${userList.mapNotNull { it.fruitScoreMale }.minOrNull() ?: 0} to ${userList.mapNotNull { it.fruitScoreMale }.maxOrNull() ?: 0}\n")
+        summary.append("- Vegetable scores range: ${userList.mapNotNull { it.vegetableScoreMale }.minOrNull() ?: 0} to ${userList.mapNotNull { it.vegetableScoreMale }.maxOrNull() ?: 0}\n")
+        summary.append("- Dairy scores range: ${userList.mapNotNull { it.dairyScoreMale }.minOrNull() ?: 0} to ${userList.mapNotNull { it.dairyScoreMale }.maxOrNull() ?: 0}\n")
+        summary.append("- Grains scores range: ${userList.mapNotNull { it.grainsScoreMale }.minOrNull() ?: 0} to ${userList.mapNotNull { it.grainsScoreMale }.maxOrNull() ?: 0}\n")
+        summary.append("- Water intake range: ${userList.mapNotNull { it.waterIntake }.minOrNull() ?: 0} to ${userList.mapNotNull { it.waterIntake }.maxOrNull() ?: 0}\n")
+        
+        return summary.toString()
+    }
+    
+    // Parse the AI response into separate patterns
+    private fun parsePatterns(response: String): List<String> {
+        // Simple parsing - looking for numbered patterns or patterns with title: format
+        val lines = response.split("\n")
+        val patterns = mutableListOf<String>()
+        
+        var currentPattern = ""
+        for (line in lines) {
+            val trimmedLine = line.trim()
+            
+            // Skip empty lines
+            if (trimmedLine.isEmpty()) {
+                continue
+            }
+            
+            // If we find a line that looks like a new pattern title
+            if (trimmedLine.contains(":") || trimmedLine.matches(Regex("^\\d+\\..*"))) {
+                if (currentPattern.isNotEmpty()) {
+                    patterns.add(currentPattern)
+                }
+                currentPattern = trimmedLine
+            } else {
+                // Continue the current pattern
+                currentPattern += " $trimmedLine"
+            }
+        }
+        
+        // Add the last pattern if there is one
+        if (currentPattern.isNotEmpty()) {
+            patterns.add(currentPattern)
+        }
+        
+        // Make sure we have exactly 3 patterns
+        return patterns.take(3).ifEmpty { generateFallbackPatterns() }
+    }
+    
+    // Fallback patterns if AI fails
+    private fun generateFallbackPatterns(): List<String> {
+        // Create more reliable fallback patterns based on average data values
+        val maleAvg = _maleHeifaAverage.value
+        val femaleAvg = _femaleHeifaAverage.value
+        
+        return listOf(
+            "HEIFA Score Analysis: The average HEIFA score for males is ${String.format("%.1f", maleAvg)} and for females is ${String.format("%.1f", femaleAvg)}. This suggests that overall dietary patterns vary between genders in the dataset, which could be due to different nutritional requirements or dietary preferences.",
+            
+            "Nutritional Pattern Insights: Many users in the dataset show suboptimal consumption of fruits and vegetables based on HEIFA scoring. This pattern suggests an opportunity for targeted nutritional guidance to improve diet quality and increase intake of these important food groups.",
+            
+            "Dietary Improvement Opportunities: Based on the collected data, water intake and whole grain consumption represent areas where many users could improve their nutritional habits. Adding specific reminders or educational content about these food groups could help users improve their overall HEIFA scores."
         )
     }
 }

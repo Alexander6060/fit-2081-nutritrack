@@ -112,6 +112,17 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
                                 inclusive = true
                             }
                         }
+                    },
+                    onNavigateToAdminView = {
+                        navController.navigate("admin_view")
+                    }
+                )
+            }
+            composable("admin_view") {
+                AdminViewScreen(
+                    viewModel = viewModel,
+                    onDone = {
+                        navController.popBackStack()
                     }
                 )
             }
