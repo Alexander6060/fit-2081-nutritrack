@@ -7,7 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
 
 @Composable
@@ -16,6 +19,9 @@ fun InsightsScreen(
     onImproveDietClick: () -> Unit
 ) {
     val user = viewModel.getCurrentUser()
+    // State for showing the share dialog
+    var showShareDialog by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
 
     // Fetch values based on gender
     fun getScore(maleValue: Double?, femaleValue: Double?): Float {
@@ -53,6 +59,16 @@ fun InsightsScreen(
     // Create a scroll state for the vertical scroll
     val scrollState = rememberScrollState()
 
+    // Generate shareable text
+    val shareableText = buildString {
+        append("My NutriTrack Dietary Score: ${"%.2f".format(totalScore)}\n\n")
+        append("Detailed Breakdown:\n")
+        categoryScores.forEach { (label, scorePair) ->
+            val (score, maxScore) = scorePair
+            append("$label: ${"%.1f".format(score)}/$maxScore\n")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,13 +91,67 @@ fun InsightsScreen(
         Text(text = "Total HEIFA Score: ${"%.2f".format(totalScore)}", style = MaterialTheme.typography.titleLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { /* Share logic */ }) {
+        Button(onClick = { showShareDialog = true }) {
             Text(text = "Share with someone")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onImproveDietClick) {
             Text(text = "Improve my diet")
+        }
+    }
+    
+    // Share Dialog
+    if (showShareDialog) {
+        Dialog(onDismissRequest = { showShareDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Share Your Nutrition Data",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = shareableText,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Button(
+                            onClick = { showShareDialog = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Text("Cancel")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(shareableText))
+                                showShareDialog = false
+                            }
+                        ) {
+                            Text("Copy")
+                        }
+                    }
+                }
+            }
         }
     }
 }
