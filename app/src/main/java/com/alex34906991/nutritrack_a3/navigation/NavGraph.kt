@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,6 +43,8 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         bottomBar = {
             if (currentRoute in bottomNavItems) {
                 BottomNavigationBar(
@@ -135,30 +138,61 @@ fun BottomNavigationBar(
     selectedRoute: String,
     onItemClick: (String) -> Unit
 ) {
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary
+    ) {
         NavigationBarItem(
             selected = selectedRoute == "home",
             onClick = { onItemClick("home") },
             icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-            label = { Text("Home") }
+            label = { Text("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                indicatorColor = MaterialTheme.colorScheme.tertiary,
+                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+            )
         )
         NavigationBarItem(
             selected = selectedRoute == "insights",
             onClick = { onItemClick("insights") },
             icon = { Icon(imageVector = Icons.Rounded.Insights, contentDescription = "Insights") },
-            label = { Text("Insights") }
+            label = { Text("Insights") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                indicatorColor = MaterialTheme.colorScheme.tertiary,
+                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+            )
         )
         NavigationBarItem(
             selected = selectedRoute == "nutricoach",
             onClick = { onItemClick("nutricoach") },
             icon = { Icon(Icons.Rounded.Add, contentDescription = "NutriCoach") },
-            label = { Text("NutriCoach") }
+            label = { Text("NutriCoach") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                indicatorColor = MaterialTheme.colorScheme.tertiary,
+                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+            )
         )
         NavigationBarItem(
             selected = selectedRoute == "settings",
             onClick = { onItemClick("settings") },
             icon = { Icon(Icons.Rounded.Settings, contentDescription = "Settings") },
-            label = { Text("Settings") }
+            label = { Text("Settings") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                indicatorColor = MaterialTheme.colorScheme.tertiary,
+                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+            )
         )
     }
 }

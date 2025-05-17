@@ -36,6 +36,7 @@ fun SettingsScreen(
         
         // User information
         Card(
+
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
