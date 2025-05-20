@@ -329,7 +329,10 @@ fun DropdownMenuBox(
                 }
             }
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
             userList.forEach { userId ->
                 DropdownMenuItem(
                     text = { Text(userId) },

@@ -3,17 +3,16 @@ package com.alex34906991.nutritrack_a3.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,6 +20,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alex34906991.nutritrack_a3.ui.pages.*
 import com.alex34906991.nutritrack_a3.ui.NutriTrackViewModel
+import com.alex34906991.nutritrack_a3.data.database.FoodIntakeEntity
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 
 @Composable
 fun AppNavHost(viewModel: NutriTrackViewModel) {
@@ -32,6 +34,7 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
     
     // Check if user is already logged in
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     
     // Auto-navigate to home if logged in
     LaunchedEffect(isLoggedIn) {
@@ -76,9 +79,28 @@ fun AppNavHost(viewModel: NutriTrackViewModel) {
             composable("login") {
                 LoginScreen(
                     viewModel = viewModel,
-                    onLoginSuccess = { navController.navigate("questionnaire") {
-                        popUpTo("welcome") { inclusive = true }
-                    } }
+                    onLoginSuccess = { 
+                        // Check if user has completed questionnaire before
+                        coroutineScope.launch {
+                            val userId = viewModel.getCurrentUser()?.userID
+                            if (userId != null) {
+                                val foodIntakes = viewModel.getFoodIntakeRepository().getFoodIntakesByPatient(userId).firstOrNull() ?: emptyList()
+                                val hasQuestionnaireData = foodIntakes.any<FoodIntakeEntity> { it.foodName == "Questionnaire Response" }
+                                
+                                if (hasQuestionnaireData) {
+                                    // Skip questionnaire if data exists
+                                    navController.navigate("home") {
+                                        popUpTo("welcome") { inclusive = true }
+                                    }
+                                } else {
+                                    // Go to questionnaire if no data exists
+                                    navController.navigate("questionnaire") {
+                                        popUpTo("welcome") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
             }
             composable("questionnaire") {

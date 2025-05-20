@@ -165,6 +165,8 @@ fun ScoreProgressBar(label: String, score: Float, maxScore: Float) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(10.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
         Text(text = "${"%.1f".format(score)} / $maxScore", style = MaterialTheme.typography.bodySmall)
     }

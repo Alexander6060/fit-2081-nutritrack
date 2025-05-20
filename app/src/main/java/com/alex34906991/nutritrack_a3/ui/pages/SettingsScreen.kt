@@ -36,10 +36,12 @@ fun SettingsScreen(
         
         // User information
         Card(
-
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -100,6 +102,9 @@ fun SettingsScreen(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Log Out") },
             text = { Text("Are you sure you want to log out?") },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             confirmButton = {
                 Button(
                     onClick = {
@@ -116,7 +121,10 @@ fun SettingsScreen(
             },
             dismissButton = {
                 Button(
-                    onClick = { showLogoutDialog = false }
+                    onClick = { showLogoutDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     Text("Cancel")
                 }
